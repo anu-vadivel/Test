@@ -1,0 +1,24 @@
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+WORKDIR /src
+
+COPY *.sln .
+COPY Customer.Api/*.csproj ./Customer.Api/
+COPY Customer.Domain/*.csproj ./Customer.Domain/
+COPY Customer.Persistence/*.csproj ./Customer.Persistence/
+COPY Customer.Framework/*.csproj ./Customer.Framework/
+
+RUN dotnet restore Customer.Api/Customer.Api.csproj
+
+COPY Customer.Api/. ./Customer.Api/
+COPY Customer.Domain/. ./Customer.Domain/
+COPY Customer.Persistence/. ./Customer.Persistence/
+COPY Customer.Framework/. ./Customer.Framework/
+
+RUN dotnet publish Customer.Api/Customer.Api.csproj -c release -o /app
+
+# exporting final image
+FROM mcr.microsoft.com/dotnet/aspnet:6.0
+WORKDIR /app
+COPY --from=build /app ./
+EXPOSE 5100
+ENTRYPOINT ["dotnet", "Customer.Api.dll"]
